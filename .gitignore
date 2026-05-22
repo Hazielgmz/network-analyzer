@@ -7,3 +7,4 @@ venv/
 .venv/
 .idea/
 reports/output/
+.DS_Store
