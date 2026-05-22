@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Network Analyzer</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            slate: {
+              50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
+              400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
+              800: '#1e293b', 900: '#0f172a',
+            },
+            blue:   { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+            indigo: { 500: '#6366f1', 600: '#4f46e5' },
+            emerald:{ 500: '#10b981', 600: '#059669' },
+            red:    { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 700: '#b91c1c' },
+            orange: { 50: '#fff7ed', 100: '#ffedd5', 500: '#f97316', 700: '#c2410c' },
+            yellow: { 50: '#fefce8', 100: '#fef9c3', 500: '#eab308', 700: '#a16207' },
+          },
+          borderRadius: { '2xl': '1rem', '3xl': '1.5rem' },
+          boxShadow: { 'soft': '0 4px 20px -2px rgba(0,0,0,0.05)' }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(0.98); }
+    }
+    .animate-pulse-fast { animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .gradient-btn { background: linear-gradient(to right, #2563eb, #6366f1); }
+    .gradient-btn:hover { background: linear-gradient(to right, #1d4ed8, #4f46e5); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- Sticky Top Navbar -->
+  <header class="w-full bg-slate-50 border-b border-slate-200 sticky top-0 z-50 h-16 flex items-center">
+    <div class="max-w-5xl mx-auto w-full px-4 sm:px-6 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+        <span class="material-symbols-outlined text-white text-[18px]">radar</span>
+      </div>
+      <span class="text-slate-900 font-semibold text-sm">Network Analyzer</span>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-16 flex flex-col gap-12 items-center">
+
+    <!-- Hero Section -->
+    <section class="flex flex-col items-center text-center gap-8 w-full max-w-3xl">
+      <div class="flex flex-col items-center gap-4">
+        <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 tracking-tight leading-tight">
+          Descubre riesgos en tu red en segundos
+        </h2>
+        <p class="text-lg text-slate-600 max-w-2xl">
+          Escanea, identifica y asegura tus activos. Nuestra herramienta analiza puertos, servicios y vulnerabilidades con solo un clic.
+        </p>
+      </div>
+
+      <!-- Scan Form -->
+      <form class="w-full flex flex-col sm:flex-row gap-3 mt-4" id="scanForm">
+        <div class="relative flex-1">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">router</span>
+          <input
+            class="w-full bg-white border border-slate-200 rounded-xl py-4 pl-12 pr-4 font-mono text-base
+                   text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-500
+                   focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
+            id="networkInput"
+            placeholder="Ej. 192.168.1.0/24"
+            required
+            type="text"
+          >
+        </div>
+        <button
+          class="gradient-btn text-white font-semibold text-base px-8 py-4 rounded-xl shadow-soft
+                 active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0
+                 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+          id="scanBtn"
+          type="submit"
+        >
+          <span class="material-symbols-outlined text-[20px]" id="scanIcon">radar</span>
+          <span id="btnText">Escanear</span>
+        </button>
+      </form>
+
+      <!-- Error banner -->
+      <div class="hidden w-full bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm text-left flex items-center gap-2" id="errorBanner">
+        <span class="material-symbols-outlined text-red-500 text-[18px]">error</span>
+        <span id="errorMsg"></span>
+      </div>
+
+      <!-- Feature bullets -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-4 w-full">
+        <div class="flex items-center justify-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span class="text-sm text-slate-600 font-medium">Inventario de hosts</span>
+        </div>
+        <div class="flex items-center justify-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span class="text-sm text-slate-600 font-medium">Escaneo de puertos</span>
+        </div>
+        <div class="flex items-center justify-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span class="text-sm text-slate-600 font-medium">Identificación de servicios</span>
+        </div>
+        <div class="flex items-center justify-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span class="text-sm text-slate-600 font-medium">Alertas de vulnerabilidad</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- States Container -->
+    <div class="flex-1 w-full relative min-h-[300px]">
+
+      <!-- Empty State -->
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-center py-12" id="emptyState">
+        <div class="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 text-slate-300">
+          <span class="material-symbols-outlined text-[32px]">manage_search</span>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-700 mb-1">Esperando objetivo</h3>
+        <p class="text-sm text-slate-500 max-w-sm">Los resultados del análisis de red, hosts y vulnerabilidades aparecerán aquí.</p>
+      </div>
+
+      <!-- Loading -->
+      <div class="hidden absolute inset-0 flex-col items-center justify-center text-center py-12" id="loadingSection">
+        <div class="relative w-16 h-16 mb-6">
+          <div class="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+          <div class="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+          <span class="absolute inset-0 flex items-center justify-center material-symbols-outlined text-blue-600 animate-pulse-fast text-[20px]">wifi_tethering</span>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-800 mb-1">Ejecutando escaneo profundo...</h3>
+        <p class="font-mono text-sm text-slate-500">Analizando <span class="text-blue-600 font-medium" id="loadingTarget"></span></p>
+      </div>
+
+      <!-- Results -->
+      <div class="hidden flex-col gap-8 w-full pb-12" id="resultsSection">
+
+        <!-- Title Row -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-slate-200 pb-4 gap-4 mt-8">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight" id="resultTitle">Resultados del Escaneo</h2>
+            <p class="text-sm text-slate-500 mt-1 font-medium" id="resultMeta"></p>
+          </div>
+          <a
+            href="/report/download"
+            class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2
+                   rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <span class="material-symbols-outlined text-[18px]">download</span>
+            Descargar reporte
+          </a>
+        </div>
+
+        <!-- Severity summary cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="summaryCards"></div>
+
+        <!-- Host cards -->
+        <div class="flex flex-col gap-6">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-slate-400">dns</span>
+            <h3 class="text-lg font-bold text-slate-800">Hosts Descubiertos</h3>
+          </div>
+          <div class="flex flex-col gap-6" id="hostCards"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const scanForm       = document.getElementById('scanForm');
+      const networkInput   = document.getElementById('networkInput');
+      const scanBtn        = document.getElementById('scanBtn');
+      const btnText        = document.getElementById('btnText');
+      const errorBanner    = document.getElementById('errorBanner');
+      const errorMsg       = document.getElementById('errorMsg');
+      const emptyState     = document.getElementById('emptyState');
+      const loadingSection = document.getElementById('loadingSection');
+      const loadingTarget  = document.getElementById('loadingTarget');
+      const resultsSection = document.getElementById('resultsSection');
+      const summaryCards   = document.getElementById('summaryCards');
+      const hostCards      = document.getElementById('hostCards');
+      const resultTitle    = document.getElementById('resultTitle');
+      const resultMeta     = document.getElementById('resultMeta');
+
+      // ── severity helpers ──────────────────────────────────────────────────
+      const SEV = {
+        CRITICAL: { bg: 'bg-red-50',    dot: 'bg-red-500',    text: 'text-red-700',    border: 'border-red-100',    icon: 'text-red-500'    },
+        HIGH:     { bg: 'bg-orange-50', dot: 'bg-orange-500', text: 'text-orange-700', border: 'border-orange-100', icon: 'text-orange-500' },
+        MEDIUM:   { bg: 'bg-yellow-50', dot: 'bg-yellow-500', text: 'text-yellow-700', border: 'border-yellow-100', icon: 'text-yellow-500' },
+        LOW:      { bg: 'bg-blue-50',   dot: 'bg-blue-500',   text: 'text-blue-700',   border: 'border-blue-100',   icon: 'text-blue-500'   },
+      };
+      const sev = (s) => SEV[s] || SEV.LOW;
+
+      // ── form submit ───────────────────────────────────────────────────────
+      scanForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const network = networkInput.value.trim();
+        if (!network) return;
+
+        hideError();
+        setLoading(true, network);
+
+        try {
+          const res  = await fetch('/scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ network }),
+          });
+          const data = await res.json();
+
+          if (!res.ok) {
+            showError(data.error || 'Error desconocido al escanear.');
+            showEl(emptyState);
+            return;
+          }
+
+          renderResults(data);
+          showEl(resultsSection, 'flex');
+        } catch (err) {
+          showError('No se pudo conectar con el servidor. Asegúrate de que Flask está corriendo.');
+          showEl(emptyState);
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      // ── render ────────────────────────────────────────────────────────────
+      function renderResults(data) {
+        resultTitle.textContent = `${data.total_hosts} host${data.total_hosts !== 1 ? 's' : ''} encontrado${data.total_hosts !== 1 ? 's' : ''}`;
+        resultMeta.innerHTML    =
+          `Objetivo: <span class="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">${data.network}</span>` +
+          ` &bull; ${data.scanned_at}`;
+
+        renderSummary(data.summary);
+        renderHosts(data.hosts);
+      }
+
+      function renderSummary(summary) {
+        summaryCards.innerHTML = ['CRITICAL','HIGH','MEDIUM','LOW'].map(level => {
+          const c = sev(level);
+          return `
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-16 h-16 -mr-8 -mt-8 rounded-full ${c.bg} opacity-50"></div>
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-2.5 h-2.5 rounded-full ${c.dot}"></span>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">${level}</span>
+              </div>
+              <span class="text-3xl font-black text-slate-800">${summary[level] ?? 0}</span>
+            </div>`;
+        }).join('');
+      }
+
+      function renderHosts(hosts) {
+        if (!hosts.length) {
+          hostCards.innerHTML = `<p class="text-slate-500 text-sm">No se encontraron hosts activos.</p>`;
+          return;
+        }
+
+        // Build a map port → vuln for quick lookup
+        hostCards.innerHTML = hosts.map(host => {
+          const vulnByPort = {};
+          (host.vulnerabilities || []).forEach(v => { vulnByPort[v.port] = v; });
+
+          const deviceIcon = (vendor = '') =>
+            vendor.toLowerCase().includes('apple')  ? 'laptop_mac' :
+            vendor.toLowerCase().includes('cisco') || vendor.toLowerCase().includes('comm') ? 'router' : 'dns';
+
+          const portRows = (host.ports || []).map(p => {
+            const vuln = vulnByPort[p.port];
+            const alertHtml = vuln
+              ? alertBlock(vuln.severity, vuln.title, vuln.description)
+              : '';
+            return `
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="px-4 py-4 align-top">
+                  <div class="flex items-center gap-2 font-mono text-sm">
+                    <span class="font-bold text-slate-800">${p.port}</span>
+                    <span class="text-slate-400">/tcp</span>
+                  </div>
+                </td>
+                <td class="px-4 py-4 align-top">
+                  <span class="text-sm font-medium text-slate-700">${p.service}</span>
+                </td>
+                <td class="px-4 py-4 align-top">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide border border-slate-200 bg-slate-100 text-slate-600 mb-2">
+                    OPEN
+                  </span>
+                  ${alertHtml}
+                </td>
+              </tr>`;
+          }).join('');
+
+          const noPorts = !host.ports || !host.ports.length;
+
+          return `
+            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div class="bg-slate-50/50 p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                  <div class="h-12 w-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                    <span class="material-symbols-outlined text-[24px]">${deviceIcon(host.vendor)}</span>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="flex flex-wrap items-center gap-3">
+                      <h4 class="font-mono text-lg font-bold text-blue-600">${host.ip}</h4>
+                      <span class="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-xs font-mono text-slate-500">${host.mac}</span>
+                      ${host.vendor && host.vendor !== 'unknown'
+                        ? `<span class="px-2 py-0.5 bg-blue-50 border border-blue-100 rounded text-xs font-medium text-blue-700">${host.vendor}</span>`
+                        : ''}
+                    </div>
+                    <span class="text-sm text-slate-500">${host.hostname || 'unknown'}</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-white border border-emerald-100 rounded-lg shadow-sm self-start md:self-auto">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span class="text-xs font-bold text-emerald-700 uppercase">Up</span>
+                </div>
+              </div>
+
+              <div class="p-5">
+                ${noPorts
+                  ? `<p class="text-sm text-slate-500">Sin puertos abiertos detectados.</p>`
+                  : `<div class="overflow-x-auto rounded-xl border border-slate-100">
+                       <table class="w-full text-left border-collapse min-w-[500px]">
+                         <thead>
+                           <tr class="bg-slate-50 border-b border-slate-100">
+                             <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-1/4">Puerto / Proto</th>
+                             <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-1/4">Servicio</th>
+                             <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-1/2">Estado / Alertas</th>
+                           </tr>
+                         </thead>
+                         <tbody class="divide-y divide-slate-100">${portRows}</tbody>
+                       </table>
+                     </div>`}
+                ${!host.vulnerabilities || !host.vulnerabilities.length
+                  ? `<p class="text-emerald-600 text-sm mt-4 font-medium flex items-center gap-1.5">
+                       <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                       Sin vulnerabilidades detectadas
+                     </p>`
+                  : ''}
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      function alertBlock(severity, title, description) {
+        const c = sev(severity);
+        const iconName = severity === 'CRITICAL' ? 'warning' : 'info';
+        return `
+          <div class="${c.bg} ${c.border} border rounded-lg p-3 flex items-start gap-3 mt-2">
+            <span class="material-symbols-outlined ${c.icon} text-[18px] shrink-0">${iconName}</span>
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider ${c.text} block mb-0.5">${severity}</span>
+              <span class="text-xs ${c.text} font-semibold block">${title}</span>
+              <span class="text-xs text-slate-600 mt-0.5 block">${description}</span>
+            </div>
+          </div>`;
+      }
+
+      // ── helpers ───────────────────────────────────────────────────────────
+      function setLoading(active, network = '') {
+        scanBtn.disabled     = active;
+        btnText.textContent  = active ? 'Escaneando…' : 'Escanear';
+        loadingTarget.textContent = network;
+
+        if (active) {
+          hideEl(emptyState);
+          hideEl(resultsSection);
+          showEl(loadingSection, 'flex');
+        } else {
+          hideEl(loadingSection);
+        }
+      }
+
+      function showError(msg) {
+        errorMsg.textContent = msg;
+        errorBanner.classList.remove('hidden');
+        errorBanner.classList.add('flex');
+      }
+      function hideError() {
+        errorBanner.classList.add('hidden');
+        errorBanner.classList.remove('flex');
+      }
+      function showEl(el, display = 'block') {
+        el.classList.remove('hidden');
+        if (display === 'flex') el.classList.add('flex');
+      }
+      function hideEl(el) {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+    });
+  </script>
+
+</body>
+</html>
