@@ -1,5 +1,7 @@
 # Network Analyzer
 
+<img width="2550" height="1148" alt="image" src="https://github.com/user-attachments/assets/3d898cb6-c9ae-4610-a1e3-513268dd1367" />
+
 Herramienta de análisis de seguridad de red local desarrollada en Python con Flask. Permite descubrir todos los dispositivos conectados a una red, identificar los puertos y servicios activos en cada uno, y detectar configuraciones de riesgo aplicando reglas de vulnerabilidad. Los resultados se muestran en una interfaz web y se pueden exportar como reporte en formato HTML o JSON.
 
 ---
